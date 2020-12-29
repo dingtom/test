@@ -80,8 +80,10 @@ test_batch_gen = get_crnn_cross_batch_generator(args.batch_size, test_wav_file_l
 # plt.show()
 # print(input_data['the_inputs'].shape, input_data['the_labels'].shape, input_data['input_length'].shape, input_data['label_length'].shape)
 his = crnn_cross_model.fit_generator(train_batch_gen, verbose=1, steps_per_epoch=len(train_wav_file_list)//args.batch_size, validation_data=validate_batch_gen, validation_steps=len(validate_wav_file_list)//args.batch_size, epochs=args.epochs, callbacks=cb)  
-crnn_cross_model.evaluate_generator(test_batch_gen, steps=None, callbacks=None, max_queue_size=10, workers=1, use_multiprocessing=False, verbose=0)
+test_wavs, test_labels = get_crnn_cross_train_data(test_wav_file_list, test_label_list, args.image_size)
 
+acc = crnn_cross_model.evaluate(test_wavs, test_labels)
+print(acc)
 # # 读入所有数据
 # #train_data = get_crnn_cross_train_data(train_wav_file_list, train_label_list, args.image_size)
 # #  print(train_data[0]['the_inputs'].shape, train_data[1]['the_labels'].shape, 2222222222222222222)
