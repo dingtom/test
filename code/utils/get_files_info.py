@@ -207,6 +207,7 @@ def get_crnn_cross_train_data(w_list, l_list,image_size):
     wav_batch, label_batch = [], []
     for index in range(len(w_list)):
         label = int(l_list[index])
+        label = to_categorical(l-1, num_classes=4)
 
         X = np.squeeze(scio.loadmat(w_list[index])['csi'][:, 0]) # !!!!!!!!!!!!!!!!!!!!!!!!!!!子载波
         # print(type(X),X.shape)
@@ -287,4 +288,63 @@ def get_crnn_ctc_test_data(image_size, w_list, l_list, p_list):
         pad_wav_data, wav_length = wav_padding(image_size, wav_batch)
         input_data.append(pad_wav_data)
         output_data.append(label[0])
+    return input_data, output_data
+
+
+    # 生成batch_size的信号时频图和标签数据，存放到两个list中去
+def get_3dconv_cross_batch_generator(mode, b_size, w_list, l_list):
+    shuffle_list = [i for i in range(len(w_list))]
+    if mode == 'test':
+        for j in range(len(w_list)//b_size):
+            random.shuffle(shuffle_list)  # 打乱数据的顺序，我们通过查询乱序的索引值，来确定训练数据的顺序
+            wav_batch = []
+            label_batch = []
+            begin = j*b_size
+            end = begin+b_size
+            for index in shuffle_list[begin:end]:
+                X = scio.loadmat(w_list[index])['csi'] # !!!!!!!!!!!!!!!!!!!!!!!!!!!子载波
+                wav_batch.append(X)
+                l = int(l_list[index])
+                label = to_categorical(l-1, num_classes=4)
+                #plt.imshow(fbank, cmap='binary', origin='lower')
+                #plt.savefig(w_list[index].replace('mat', 'jpg'))
+                label_batch.append(label)
+            input_batch = {'the_inputs': np.array(wav_batch)}
+            output_batch = {'the_labels': np.array(label_batch)}
+
+            yield input_batch, output_batch
+    else:
+        while True:
+            for j in range(len(w_list)//b_size):
+                random.shuffle(shuffle_list)  # 打乱数据的顺序，我们通过查询乱序的索引值，来确定训练数据的顺序
+                wav_batch = []
+                label_batch = []
+                begin = j*b_size
+                end = begin+b_size
+                for index in shuffle_list[begin:end]:
+                    X = scio.loadmat(w_list[index])['csi'] # !!!!!!!!!!!!!!!!!!!!!!!!!!!子载波
+                    wav_batch.append(X)
+                    l = int(l_list[index])
+                    label = to_categorical(l-1, num_classes=4)
+                    #plt.imshow(fbank, cmap='binary', origin='lower')
+                    #plt.savefig(w_list[index].replace('mat', 'jpg'))
+                    label_batch.append(label)
+                input_batch = {'the_inputs': np.array(wav_batch)}
+                output_batch = {'the_labels': np.array(label_batch)}
+
+                yield input_batch, output_batch
+
+# 生成的信号时频图和标签数据，存放到两个list中去
+def get_3dconv_cross_test_data(w_list, l_list):
+    input_data = []
+    output_data = []
+    for i in range(len(w_list)):
+        wav_batch = []
+        label_batch = []
+        X = scio.loadmat(w_list[i])['csi'] 
+        label = int(l_list[i])
+        # print(type(X),X.shape)
+        input_data.append(X)
+        output_data.append(label)
+
     return input_data, output_data

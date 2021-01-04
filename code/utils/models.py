@@ -152,4 +152,31 @@ def create_crnn_cross_model(input_size, output_size):
     return base_model
 
 
+# 交叉熵损失函数的CRNN
+def create_3d_cross_model(input_size, output_size):
+    inputs = Input(name='the_inputs', shape=input_size)
+    c1 = Conv3D(32, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform', padding='same', input_shape=input_size)(inputs)
+    p1 = MaxPooling3D(pool_size=(2, 2, 2), padding='same')(c1)
+    b1 = BatchNormalization(center=True, scale=True)(p1)
+    d1 = Dropout(0.5)(b1)
 
+    c2 = Conv3D(64, kernel_size=(3, 3, 3), activation='relu', padding='same', kernel_initializer='he_uniform')(d1)
+    p2 = MaxPooling3D(pool_size=(2, 2, 2), padding='same')(c2)
+    b2 = BatchNormalization(center=True, scale=True)(p2)
+    d2 = Dropout(0.5)(b2)
+
+    c3 = Conv3D(64, kernel_size=(3, 3, 3), activation='relu', padding='same', kernel_initializer='he_uniform')(d2)
+    p3 = MaxPooling3D(pool_size=(2, 2, 2), padding='same')(c3)
+    b3 = BatchNormalization(center=True, scale=True)(p3)
+    d3 = Dropout(0.5)(b3)
+
+    f1 = Flatten()(d3)
+    des1 = Dense(256, activation='relu', kernel_initializer='he_uniform')(f1)
+    des2 = Dense(513, activation='relu', kernel_initializer='he_uniform')(des1)
+    des3 = Dense(1024, activation='relu', kernel_initializer='he_uniform')(des1)
+    outputs = Dense(output_size, activation='softmax', name='the_labels')(des3)
+    model = keras.Model(inputs=inputs, outputs=outputs)
+    # Compile the model
+    model.compile(loss='categorical_crossentropy', optimizer=keras.optimizers.Adam(lr=0.001), metrics=['accuracy'])
+
+    return model

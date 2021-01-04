@@ -23,6 +23,10 @@ from utils.extract_csi import extract_csi, get_scaled_csi
 # data_crop, down_sampling, moving_average, add_jitter, add_scaling
 from utils.get_files_info import gen_py_list, get_label_data, get_file_list, get_crnn_ctc_train_data, get_crnn_ctc_test_data
 from utils.models import create_crnn_ctc_model, decode_ctc
+from utils.ploter import plot_confusion_matrix
+
+
+
 import warnings
 warnings.filterwarnings('ignore')
 # 设置GPU内存按需分配
@@ -33,7 +37,7 @@ config.gpu_options.allow_growth = True
 session = InteractiveSession(config=config)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--data_path", default='/home/zut_csi/tomding/RCNN/data_processed', type=str, help="输入数据dir")  # required=True,
+parser.add_argument("--data_path", default='/home/zut_csi/tomding/RCNN/data_processed/all/1', type=str, help="输入数据dir")  # required=True,
 parser.add_argument("--image_size", default=64, type=int, help="")
 parser.add_argument("--logs_path", default='./logs', type=str, help="模型存储在何处")
 parser.add_argument("--test_mode", action='store_true', help="Whether to run training.")  # 运行时该变量有传参就将该变量设为True
@@ -59,10 +63,10 @@ train_label_list = get_label_data(train_label_file_list)
 test_label_list = get_label_data(test_label_file_list)
 
 # 每个文件拼音标签的集合
-with open('label_list.txt', 'w') as f:  
+with open('./train_files/crnn_ctc_label_list.txt', 'w') as f:  
     f.write('\n'.join(train_label_list))  
 py_list = gen_py_list(train_label_list)  # 拼音的集合
-with open('pinyin_list.txt', 'w') as f:
+with open('./train_files/crnn_ctc_pinyin_list.txt', 'w') as f:
     f.write('\n'.join(py_list))  # 保存拼音列表
 print('py_list len:', len(py_list), 'py_list:', py_list)
 
@@ -93,7 +97,7 @@ if args.test_mode == True:
 print('train files amount:', len(train_label_file_list), len(train_wav_file_list))#, 'validate files amount:', len(validate_label_list), validate_file_nums,)
 print('test files amount:', len(test_label_file_list), len(test_wav_file_list))
 
-his = crnn_ctc_model.fit(train_data[0], train_data[1], validation_split=0.1, batch_size=args.batch_size, epochs=args.epochs, callbacks=cb)  # callback的epoch都是对fit里的参数来说
+#his = crnn_ctc_model.fit(train_data[0], train_data[1], validation_split=0.1, batch_size=args.batch_size, epochs=args.epochs, callbacks=cb)  # callback的epoch都是对fit里的参数来说
 
 #  保存模型结构及权重
 crnn_ctc_model.save_weights(r'./train_files/crnn_ctc_save_weights.h5')
@@ -119,7 +123,7 @@ print('py_list已加载')
 
 
 # 对模型进行评价
-def evaluate(kind, wavs, labels):
+def evaluate(kind, wavs, labels, p):
     data_num = len(wavs)
     error_cnt = 0
     for i in range(data_num):
@@ -130,17 +134,23 @@ def evaluate(kind, wavs, labels):
         except:
             pre_label = None
         label = int(py_list[labels[i]])
+        p.append(label)
         if label != pre_label:
             error_cnt += 1
             print('真实标签：', label, '预测结果', pre_label)
-    print('{}:样本数{}错误数{}准确率：{:%}'.format(
-        kind, data_num, error_cnt, (1-error_cnt/data_num)))
+    print('{}:样本数{}错误数{}准确率：{:%}'.format(kind, data_num, error_cnt, (1-error_cnt/data_num)))
 
 
 # 训练集
 train_wavs, train_labels = get_crnn_ctc_test_data(args.image_size, train_wav_file_list, train_label_list, py_list)
 # 测试集
 test_wavs, test_labels = get_crnn_ctc_test_data(args.image_size, test_wav_file_list, test_label_list, py_list)
-
-evaluate('trian', train_wavs, train_labels)
-evaluate('test', test_wavs, test_labels)
+p = []
+evaluate('trian', train_wavs, train_labels, p)
+p = []
+evaluate('test', test_wavs, test_labels, p)
+print(len(test_labels), len(test_wavs))
+# acc = test_model.evaluate(test_wavs, test_labels)
+# print(acc, 1111111111111)
+plot_confusion_matrix('Confusion Matrix', test_labels, p, py_list)
+plot_confusion_matrix('Confusion Matrix', test_labels, test_model.predict_on_batch(test_wavs), py_list)
