@@ -79,7 +79,7 @@ test_batch_gen = get_3dconv_cross_batch_generator('test', args.batch_size, test_
 # plt.imshow(input_data['the_inputs'][0].T[0])
 # plt.show()
 # print(input_data['the_inputs'].shape, input_data['the_labels'].shape, input_data['input_length'].shape, input_data['label_length'].shape)
-his = crnn_cross_model.fit_generator(train_batch_gen, verbose=1, steps_per_epoch=len(train_wav_file_list)//args.batch_size, validation_data=validate_batch_gen, validation_steps=len(validate_wav_file_list)//args.batch_size, epochs=args.epochs, callbacks=cb)  
+#his = crnn_cross_model.fit_generator(train_batch_gen, verbose=1, steps_per_epoch=len(train_wav_file_list)//args.batch_size, validation_data=validate_batch_gen, validation_steps=len(validate_wav_file_list)//args.batch_size, epochs=args.epochs, callbacks=cb)  
 
 
 # 读入所有数据
